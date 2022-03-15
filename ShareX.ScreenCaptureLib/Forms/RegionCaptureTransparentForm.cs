@@ -86,7 +86,7 @@ namespace ShareX.ScreenCaptureLib
             StartPosition = FormStartPosition.Manual;
             Bounds = ScreenRectangle;
             Text = "ShareX - " + Resources.RectangleTransparent_RectangleTransparent_Rectangle_capture_transparent;
-            Cursor = Helpers.CreateCursor(Resources.Crosshair);
+            Cursor = Cursors.Cross;
             TopMost = true;
 
             Shown += RectangleTransparent_Shown;

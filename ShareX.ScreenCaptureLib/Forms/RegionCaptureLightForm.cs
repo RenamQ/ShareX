@@ -75,7 +75,7 @@ namespace ShareX.ScreenCaptureLib
 
             InitializeComponent();
             Icon = ShareXResources.Icon;
-            Cursor = Helpers.CreateCursor(Resources.Crosshair);
+            Cursor = Cursors.Cross;
 
             timer = new Timer { Interval = 10 };
             timer.Tick += timer_Tick;

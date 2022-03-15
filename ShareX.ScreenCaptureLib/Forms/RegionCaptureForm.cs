@@ -200,7 +200,7 @@ namespace ShareX.ScreenCaptureLib
             SuspendLayout();
 
             AutoScaleMode = AutoScaleMode.None;
-            defaultCursor = Helpers.CreateCursor(Resources.Crosshair);
+            defaultCursor = Cursors.Cross;
             openHandCursor = Helpers.CreateCursor(Resources.openhand);
             closedHandCursor = Helpers.CreateCursor(Resources.closedhand);
             SetDefaultCursor();
