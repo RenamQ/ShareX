@@ -186,6 +186,7 @@ namespace ShareX
             panel.MouseEnter += Panel_MouseEnter;
             panel.MouseDown += (object sender, MouseEventArgs e) => Panel_MouseDown(e, panel);
             panel.MouseUp += Panel_MouseUp;
+            panel.ImagePreviewRequested += Panel_ImagePreviewRequested;
             return panel;
         }
 
@@ -327,6 +328,13 @@ namespace ShareX
             {
                 OnContextMenuRequested(sender, e);
             }
+        }
+
+        private void Panel_ImagePreviewRequested(TaskThumbnailPanel panel)
+        {
+            string[] images = Panels.Select(x => x.Task.Info.FilePath).Reverse().ToArray();
+            int currentImageIndex = Panels.Count - Panels.IndexOf(panel) - 1;
+            ImageViewer.ShowImage(images, currentImageIndex);
         }
 
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
