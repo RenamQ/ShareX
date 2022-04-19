@@ -29,7 +29,7 @@ using System.Collections.Generic;
 
 namespace ShareX.UploadersLib
 {
-    public class CustomUploaderSyntaxParser : ShareXSyntaxParser
+    public class ShareXCustomUploaderSyntaxParser : ShareXSyntaxParser
     {
         private static IEnumerable<CustomUploaderFunction> Functions = Helpers.GetInstances<CustomUploaderFunction>();
 
@@ -40,11 +40,11 @@ namespace ShareX.UploadersLib
         public bool UseNameParser { get; set; }
         public NameParserType NameParserType { get; set; } = NameParserType.Text;
 
-        public CustomUploaderSyntaxParser()
+        public ShareXCustomUploaderSyntaxParser()
         {
         }
 
-        public CustomUploaderSyntaxParser(CustomUploaderInput input)
+        public ShareXCustomUploaderSyntaxParser(CustomUploaderInput input)
         {
             FileName = input.FileName;
             Input = input.Input;
@@ -63,12 +63,22 @@ namespace ShareX.UploadersLib
             return base.Parse(text);
         }
 
-        protected override string CallFunction(string functionName, string[] parameters)
+        protected override string CallFunction(string functionName, string[] parameters = null)
         {
+            if (string.IsNullOrEmpty(functionName))
+            {
+                throw new Exception("Function name cannot be empty.");
+            }
+
             foreach (CustomUploaderFunction function in Functions)
             {
                 if (function.Name.Equals(functionName, StringComparison.OrdinalIgnoreCase))
                 {
+                    if (function.MinParameterCount > 0 && (parameters == null || parameters.Length < function.MinParameterCount))
+                    {
+                        throw new Exception($"Minimum parameter count for function \"{function.Name}\" is {function.MinParameterCount}.");
+                    }
+
                     return function.Call(this, parameters);
                 }
             }

@@ -34,12 +34,14 @@ namespace ShareX.HelpersLib
     {
         public Image CurrentImage { get; private set; }
         public string CurrentImageFilePath { get; private set; }
-        public bool SupportImageNavigation => Images != null && Images.Length > 1;
         public bool SupportWrap { get; set; }
+        public bool CanNavigate => Images != null && Images.Length > 1;
+        public bool CanNavigateLeft => CanNavigate && (SupportWrap || CurrentImageIndex > 0);
+        public bool CanNavigateRight => CanNavigate && (SupportWrap || CurrentImageIndex < Images.Length - 1);
         public string[] Images { get; private set; }
         public int CurrentImageIndex { get; private set; }
-
-        private float navigationAreaSize = 0.15f;
+        public int NavigationButtonWidth { get; set; } = 100;
+        public string Status { get; private set; }
 
         private ImageViewer(Image img)
         {
@@ -75,13 +77,14 @@ namespace ShareX.HelpersLib
                 CurrentImageFilePath = Images[CurrentImageIndex];
                 Image img = ImageHelpers.LoadImage(CurrentImageFilePath);
                 LoadImage(img);
-                UpdateIndexLabel();
             }
+
+            UpdateStatus();
         }
 
         private void NavigateImage(int position)
         {
-            if (SupportImageNavigation)
+            if (CanNavigate)
             {
                 int nextImageIndex = CurrentImageIndex + position;
 
@@ -125,7 +128,7 @@ namespace ShareX.HelpersLib
                     }
                     else
                     {
-                        CurrentImageIndex = 0;
+                        CurrentImageIndex = Math.Max(filteredImages.Count - 1, 0);
                     }
                 }
 
@@ -138,20 +141,41 @@ namespace ShareX.HelpersLib
             Images = filteredImages.ToArray();
         }
 
-        private void UpdateIndexLabel()
+        private void UpdateStatus()
         {
-            if (SupportImageNavigation)
+            Status = "";
+
+            if (CanNavigate)
             {
-                string status = CurrentImageIndex + 1 + " / " + Images.Length;
-                string fileName = Helpers.GetFileNameSafe(CurrentImageFilePath);
-                if (!string.IsNullOrEmpty(fileName))
-                {
-                    status += "  " + fileName;
-                }
-                lblStatus.Text = status;
-                lblStatus.Visible = true;
-                lblStatus.Location = new Point((ClientSize.Width - lblStatus.Width) / 2, -1);
+                AppendStatus($"{CurrentImageIndex + 1} / {Images.Length}");
             }
+
+            string fileName = Helpers.GetFileNameSafe(CurrentImageFilePath);
+
+            if (!string.IsNullOrEmpty(fileName))
+            {
+                fileName = fileName.Truncate(128, "...");
+                AppendStatus(fileName);
+            }
+
+            if (CurrentImage != null)
+            {
+                AppendStatus($"{CurrentImage.Width} x {CurrentImage.Height}");
+            }
+
+            lblStatus.Visible = !string.IsNullOrEmpty(Status);
+            lblStatus.Text = Status;
+            lblStatus.Location = new Point((ClientSize.Width - lblStatus.Width) / 2, 0);
+        }
+
+        private void AppendStatus(string text)
+        {
+            if (!string.IsNullOrEmpty(Status))
+            {
+                Status += " │ ";
+            }
+
+            Status += text;
         }
 
         public static void ShowImage(Image img)
@@ -185,11 +209,11 @@ namespace ShareX.HelpersLib
             }
         }
 
-        public static void ShowImage(string[] images, int currentImageIndex = 0)
+        public static void ShowImage(string[] files, int imageIndex = 0)
         {
-            if (images != null && images.Length > 0)
+            if (files != null && files.Length > 0)
             {
-                using (ImageViewer viewer = new ImageViewer(images, currentImageIndex))
+                using (ImageViewer viewer = new ImageViewer(files, imageIndex))
                 {
                     viewer.ShowDialog();
                 }
@@ -198,7 +222,7 @@ namespace ShareX.HelpersLib
 
         private void ImageViewer_Shown(object sender, EventArgs e)
         {
-            UpdateIndexLabel();
+            UpdateStatus();
 
             this.ForceActivate();
         }
@@ -208,48 +232,43 @@ namespace ShareX.HelpersLib
             Close();
         }
 
-        private void pbPreview_MouseDown(object sender, MouseEventArgs e)
+        private void lblLeft_MouseDown(object sender, MouseEventArgs e)
         {
-            if (SupportImageNavigation && e.Location.X < ClientSize.Width * navigationAreaSize)
+            if (e.Button == MouseButtons.Left)
             {
                 NavigateImage(-1);
+                lblLeft.Visible = CanNavigateLeft;
             }
-            else if (SupportImageNavigation && e.Location.X > ClientSize.Width * (1 - navigationAreaSize))
+        }
+
+        private void lblRight_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
             {
                 NavigateImage(1);
+                lblRight.Visible = CanNavigateRight;
             }
-            else
-            {
-                Close();
-            }
+        }
+
+        private void pbPreview_MouseClick(object sender, MouseEventArgs e)
+        {
+            Close();
         }
 
         private void pbPreview_MouseMove(object sender, MouseEventArgs e)
         {
-            if (SupportImageNavigation)
-            {
-                if (e.Location.X < ClientSize.Width * navigationAreaSize)
-                {
-                    Cursor = Cursors.PanWest;
-                }
-                else if (e.Location.X > ClientSize.Width * (1 - navigationAreaSize))
-                {
-                    Cursor = Cursors.PanEast;
-                }
-                else
-                {
-                    Cursor = Cursors.Hand;
-                }
-            }
+            lblStatus.Visible = !string.IsNullOrEmpty(Status) && !new Rectangle(lblStatus.Location, lblStatus.Size).Contains(e.Location);
+            lblLeft.Visible = CanNavigateLeft && new Rectangle(lblLeft.Location, lblLeft.Size).Contains(e.Location);
+            lblRight.Visible = CanNavigateRight && new Rectangle(lblRight.Location, lblRight.Size).Contains(e.Location);
         }
 
         private void pbPreview_MouseWheel(object sender, MouseEventArgs e)
         {
-            if (e.Delta > 0)
+            if (CanNavigateLeft && e.Delta > 0)
             {
                 NavigateImage(-1);
             }
-            else if (e.Delta < 0)
+            else if (CanNavigateRight && e.Delta < 0)
             {
                 NavigateImage(1);
             }
@@ -284,6 +303,11 @@ namespace ShareX.HelpersLib
             }
         }
 
+        private void lblStatus_MouseEnter(object sender, EventArgs e)
+        {
+            lblStatus.Visible = false;
+        }
+
         #region Windows Form Designer generated code
 
         private System.ComponentModel.IContainer components = null;
@@ -304,11 +328,12 @@ namespace ShareX.HelpersLib
         {
             pbPreview = new MyPictureBox();
             lblStatus = new Label();
+            lblLeft = new Label();
+            lblRight = new Label();
             SuspendLayout();
 
             BackColor = SystemColors.Window;
             Bounds = CaptureHelpers.GetActiveScreenBounds();
-            Cursor = Cursors.Hand;
             DoubleBuffered = true;
             FormBorderStyle = FormBorderStyle.None;
             // TODO: Translate
@@ -318,33 +343,52 @@ namespace ShareX.HelpersLib
             StartPosition = FormStartPosition.Manual;
 
             lblStatus.AutoSize = true;
-            lblStatus.Font = new Font("Arial", 14f);
+            lblStatus.Font = new Font("Arial", 13f);
             lblStatus.Padding = new Padding(5);
             lblStatus.TextAlign = ContentAlignment.MiddleCenter;
-            lblStatus.Visible = false;
             Controls.Add(lblStatus);
+
+            lblLeft.Cursor = Cursors.Hand;
+            lblLeft.Font = new Font("Arial", 50f, FontStyle.Bold);
+            lblLeft.Location = new Point(0, 0);
+            lblLeft.Text = "‹";
+            lblLeft.TextAlign = ContentAlignment.MiddleCenter;
+            lblLeft.Size = new Size(NavigationButtonWidth, Bounds.Height);
+            lblLeft.MouseDown += lblLeft_MouseDown;
+            Controls.Add(lblLeft);
+
+            lblRight.Cursor = Cursors.Hand;
+            lblRight.Font = new Font("Arial", 50f, FontStyle.Bold);
+            lblRight.Location = new Point(Bounds.Width - NavigationButtonWidth, 0);
+            lblRight.Text = "›";
+            lblRight.TextAlign = ContentAlignment.MiddleCenter;
+            lblRight.Size = new Size(NavigationButtonWidth, Bounds.Height);
+            lblRight.MouseDown += lblRight_MouseDown;
+            Controls.Add(lblRight);
 
             pbPreview.Dock = DockStyle.Fill;
             pbPreview.DrawCheckeredBackground = true;
             pbPreview.Location = new Point(0, 0);
-            pbPreview.ShowImageSizeLabel = true;
             pbPreview.Size = new Size(100, 100);
             pbPreview.TabIndex = 0;
             Controls.Add(pbPreview);
 
             Shown += ImageViewer_Shown;
             Deactivate += ImageViewer_Deactivate;
-            pbPreview.MouseDown += pbPreview_MouseDown;
+            pbPreview.MouseClick += pbPreview_MouseClick;
             pbPreview.MouseMove += pbPreview_MouseMove;
             pbPreview.MouseWheel += pbPreview_MouseWheel;
             pbPreview.KeyDown += pbPreview_KeyDown;
             pbPreview.PreviewKeyDown += pbPreview_PreviewKeyDown;
+            lblStatus.MouseEnter += lblStatus_MouseEnter;
 
             ResumeLayout(false);
         }
 
         private MyPictureBox pbPreview;
         private Label lblStatus;
+        private Label lblLeft;
+        private Label lblRight;
 
         #endregion Windows Form Designer generated code
     }

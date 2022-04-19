@@ -196,6 +196,16 @@ namespace ShareX
                         OpenImageEffects(taskSettings);
                     }
                     break;
+                case HotkeyType.ImageViewer:
+                    if (command != null && !string.IsNullOrEmpty(command.Parameter) && File.Exists(command.Parameter))
+                    {
+                        OpenImageViewer(command.Parameter);
+                    }
+                    else
+                    {
+                        OpenImageViewer();
+                    }
+                    break;
                 case HotkeyType.HashCheck:
                     OpenHashCheck();
                     break;
@@ -1072,6 +1082,27 @@ namespace ShareX
             return imageEffectsForm;
         }
 
+        public static void OpenImageViewer()
+        {
+            string filePath = ImageHelpers.OpenImageFileDialog();
+            OpenImageViewer(filePath);
+        }
+
+        public static void OpenImageViewer(string filePath)
+        {
+            if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
+            {
+                string folderPath = Path.GetDirectoryName(filePath);
+                string[] files = Directory.GetFiles(folderPath);
+
+                if (files != null && files.Length > 0)
+                {
+                    int imageIndex = Array.IndexOf(files, filePath);
+                    ImageViewer.ShowImage(files, imageIndex);
+                }
+            }
+        }
+
         public static void OpenMonitorTest()
         {
             using (MonitorTestForm monitorTestForm = new MonitorTestForm())
@@ -1541,6 +1572,7 @@ namespace ShareX
                     case HotkeyType.ScreenColorPicker: return Resources.pipette;
                     case HotkeyType.ImageEditor: return Resources.image_pencil;
                     case HotkeyType.ImageEffects: return Resources.image_saturation;
+                    case HotkeyType.ImageViewer: return Resources.images_flickr;
                     case HotkeyType.HashCheck: return Resources.application_task;
                     case HotkeyType.DNSChanger: return Resources.network_ip;
                     case HotkeyType.QRCode: return ShareXResources.IsDarkTheme ? Resources.barcode_2d_white : Resources.barcode_2d;

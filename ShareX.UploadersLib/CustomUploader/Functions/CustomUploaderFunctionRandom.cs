@@ -32,14 +32,11 @@ namespace ShareX.UploadersLib
     {
         public override string Name { get; } = "random";
 
-        public override string Call(CustomUploaderSyntaxParser parser, string[] parameters)
-        {
-            if (parameters.Length > 0)
-            {
-                return RandomFast.Pick(parameters);
-            }
+        public override int MinParameterCount { get; } = 2;
 
-            return null;
+        public override string Call(ShareXCustomUploaderSyntaxParser parser, string[] parameters)
+        {
+            return RandomFast.Pick(parameters);
         }
     }
 }

@@ -33,7 +33,9 @@ namespace ShareX.UploadersLib
     {
         public override string Name { get; } = "xml";
 
-        public override string Call(CustomUploaderSyntaxParser parser, string[] parameters)
+        public override int MinParameterCount { get; } = 1;
+
+        public override string Call(ShareXCustomUploaderSyntaxParser parser, string[] parameters)
         {
             // https://www.w3schools.com/xml/xpath_syntax.asp
             string xpath = parameters[0];

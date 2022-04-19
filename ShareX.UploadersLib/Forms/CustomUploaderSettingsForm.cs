@@ -50,6 +50,7 @@ namespace ShareX.UploadersLib
         public UploadersConfig Config { get; private set; }
 
         private bool customUploaderPauseLoad;
+        private UploadResult lastResult;
 
         public CustomUploaderSettingsForm(UploadersConfig config)
         {
@@ -670,6 +671,8 @@ namespace ShareX.UploadersLib
 
             if (!IsDisposed)
             {
+                lastResult = result;
+
                 if (result != null)
                 {
                     ResponseForm.ShowInstance(result);
@@ -694,7 +697,7 @@ namespace ShareX.UploadersLib
                 rtb.SelectionLength = rtb.TextLength;
                 rtb.SelectionColor = rtb.ForeColor;
 
-                CustomUploaderSyntaxParser parser = new CustomUploaderSyntaxParser();
+                ShareXCustomUploaderSyntaxParser parser = new ShareXCustomUploaderSyntaxParser();
 
                 for (int i = 0; i < text.Length; i++)
                 {
@@ -1031,6 +1034,14 @@ namespace ShareX.UploadersLib
         private void btnCustomUploaderDataMinify_Click(object sender, EventArgs e)
         {
             CustomUploaderFormatJsonData(Formatting.None);
+        }
+
+        private void btnTestURLSyntax_Click(object sender, EventArgs e)
+        {
+            using (CustomUploaderSyntaxTestForm syntaxTestForm = new CustomUploaderSyntaxTestForm(lastResult?.ResponseInfo, rtbResultURL.Text))
+            {
+                syntaxTestForm.ShowDialog();
+            }
         }
 
         private void rtbCustomUploaderURL_TextChanged(object sender, EventArgs e)

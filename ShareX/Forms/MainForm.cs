@@ -1452,6 +1452,16 @@ namespace ShareX
             e.Handled = e.SuppressKeyPress = true;
         }
 
+        private void pbPreview_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (lvUploads.SelectedIndices.Count > 0)
+            {
+                string[] files = lvUploads.Items.Cast<ListViewItem>().Select(x => ((WorkerTask)x.Tag).Info?.FilePath).ToArray();
+                int index = lvUploads.SelectedIndices[0];
+                ImageViewer.ShowImage(files, index);
+            }
+        }
+
         private void ucTaskThumbnailView_SelectedPanelChanged(object sender, EventArgs e)
         {
             UpdateInfoManager();
@@ -1724,6 +1734,11 @@ namespace ShareX
         private void tsmiImageEffects_Click(object sender, EventArgs e)
         {
             TaskHelpers.OpenImageEffects();
+        }
+
+        private void tsmiImageViewer_Click(object sender, EventArgs e)
+        {
+            TaskHelpers.OpenImageViewer();
         }
 
         private void tsmiImageCombiner_Click(object sender, EventArgs e)
